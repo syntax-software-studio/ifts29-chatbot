@@ -36,6 +36,8 @@ services:
       - "8045:80"
     volumes:
       - moodledata45:/var/moodledata
+      - ../moodle-plugins/local_aitutor:/var/www/html/local/aitutor
+      - ./moodle-config/config-45.php:/var/www/html/config.php
     restart: unless-stopped
 
   db-41:
@@ -68,6 +70,8 @@ services:
       - "8041:80"
     volumes:
       - moodledata41:/var/moodledata
+      - ../moodle-plugins/local_aitutor:/var/www/html/local/aitutor
+      - ./moodle-config/config-41.php:/var/www/html/config.php
     restart: unless-stopped
 
 volumes:

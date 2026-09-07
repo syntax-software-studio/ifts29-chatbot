@@ -2,6 +2,8 @@
 
 Dos instancias Moodle completas y reproducibles, definidas 100% en código (`Dockerfile` + `docker-compose.yml`), sin depender de imágenes de terceros con tags móviles. Ver [versions.md](./versions.md) para saber exactamente qué versión de Moodle/PHP/DB corre cada una — **resolver el TODO de esa tabla (pinear 4.1 a un commit exacto) antes de levantar `moodle-41`.**
 
+El plugin del widget del Tutor IA (`local_aitutor`) vive en [../moodle-plugins/local_aitutor/](../moodle-plugins/local_aitutor/) y se monta dentro de ambos contenedores — ver su propio README para arquitectura, alcance por curso y cómo configurarlo.
+
 ## Componer contenedor
 ```bash
 cd poc-moodle-integration/docker
@@ -59,6 +61,18 @@ puntual para pasar por el navegador.
 9. Esperar a que termine de crear las tablas → queda instalado.
 
 Repetir igual para `moodle-41` en http://localhost:8041, apuntando a `db-41`.
+
+## `config.php` es un archivo del host, no algo que genera el contenedor
+
+`config.php` de cada instancia vive en [moodle-config/](./moodle-config/)
+(`config-45.php`, `config-41.php`) y se monta como bind mount sobre
+`/var/www/html/config.php`. Esto es a propósito: si `config.php` quedara
+escrito solo dentro del contenedor (como lo deja `admin/cli/install.php` por
+default), **se pierde cada vez que se recrea el contenedor** (por ejemplo al
+agregar un volumen nuevo en `docker-compose.yml`) aunque la base de datos y
+`dataroot` sigan intactos — nos pasó una vez armando el widget. Si necesitás
+tocar algo de `config.php` (wwwroot, dataroot, etc.), editá el archivo en
+`moodle-config/`, no dentro del contenedor.
 
 ## Decisiones de diseño
 - **No `latest`**: cada imagen base, cada ref de Moodle y cada versión de base de datos está pineada explícitamente en [docker-compose.yml](./docker-compose.yml).
