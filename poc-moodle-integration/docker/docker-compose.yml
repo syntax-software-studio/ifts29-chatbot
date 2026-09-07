@@ -1,0 +1,81 @@
+version: "3.9"
+
+# Dos instancias completas e independientes de Moodle, cada una con su propia
+# base de datos, para probar el widget contra las dos LTS objetivo en paralelo.
+#
+# Versiones pineadas (fuente de verdad, ver versions.md):
+#   moodle-45 -> Moodle v4.5.13 LTS / PHP 8.3 / PostgreSQL 15.8
+#   moodle-41 -> Moodle vX.Y.Z LTS  / PHP 8.1 / PostgreSQL 14.13  (ver TODO en versions.md)
+
+services:
+  db-45:
+    image: postgres:15.8
+    environment:
+      POSTGRES_DB: moodle
+      POSTGRES_USER: moodle
+      POSTGRES_PASSWORD: moodle
+    volumes:
+      - db45-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moodle -d moodle"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  moodle-45:
+    build:
+      context: .
+      args:
+        PHP_IMAGE_TAG: "8.3-apache"
+        MOODLE_GIT_REF: "v4.5.13"
+    depends_on:
+      db-45:
+        condition: service_healthy
+    ports:
+      - "8045:80"
+    volumes:
+      - moodledata45:/var/moodledata
+      - ../moodle-plugins/local_aitutor:/var/www/html/local/aitutor
+      - ./moodle-config/config-45.php:/var/www/html/config.php
+    restart: unless-stopped
+
+  db-41:
+    image: postgres:14.13
+    environment:
+      POSTGRES_DB: moodle
+      POSTGRES_USER: moodle
+      POSTGRES_PASSWORD: moodle
+    volumes:
+      - db41-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moodle -d moodle"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  moodle-41:
+    build:
+      context: .
+      args:
+        PHP_IMAGE_TAG: "8.1-apache"
+        # TODO: confirmar el último tag estable de la rama MOODLE_401_STABLE
+        # antes de correr esto (ver versions.md). No lo dejé pineado a ciegas.
+        MOODLE_GIT_REF: "MOODLE_401_STABLE"
+    depends_on:
+      db-41:
+        condition: service_healthy
+    ports:
+      - "8041:80"
+    volumes:
+      - moodledata41:/var/moodledata
+      - ../moodle-plugins/local_aitutor:/var/www/html/local/aitutor
+      - ./moodle-config/config-41.php:/var/www/html/config.php
+    restart: unless-stopped
+
+volumes:
+  db45-data:
+  db41-data:
+  moodledata45:
+  moodledata41:
